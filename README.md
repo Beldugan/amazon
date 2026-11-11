@@ -21,6 +21,10 @@ Hartă animată și interactivă a râului Amazon, pentru copii de ~8 ani (RO / 
 - Trage cu mouse-ul = rotești · rotița = zoom · click dreapta = muți harta (merge și cu degetul pe tabletă)
 - Bara „Topirea zăpezii” (❄️ ↔ ☀️): zăpada se retrage, iar cascadele devin mai puternice
 - „Zbor peste râu”: zbor automat de la vârful înzăpezit până la ocean, cu explicații
+- Apa e albastră; doar Madeira și Purus aduc șuvoaie tulburi, cu noroi (Rio Negro e închis la culoare, ca în realitate)
+- 10 petice de iarbă cu animale din Amazon: jaguar, capibare, tapir, furnicar uriaș, papagali ara, tucan, broască săgeată-otrăvită, maimuță urlătoare, hoațin, leneș, vultur harpie, pecari
+- Vietăți în râu: pirania, arapaima, țipar electric, anacondă, caiman negru, lamantin, vidre uriașe, țestoase Arrau, delfini roz
+- Click pe orice animal → casetă cu informații; butonul „🐾 Animalele” te duce pe rând la fiecare
 - Etichete pe care se poate apăsa, RO/EN, sunete
 
 **Publicare pe GitHub Pages**
