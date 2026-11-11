@@ -27,8 +27,16 @@ Hartă animată și interactivă a râului Amazon, pentru copii de ~8 ani (RO / 
 - Click pe orice animal → casetă cu informații; butonul „🐾 Animalele” te duce pe rând la fiecare
 - Etichete pe care se poate apăsa, RO/EN, sunete
 
+**Plimbare prin junglă (`jungla.html`)** – la persoana întâi, la nivelul solului
+- Trage cu mouse-ul = te uiți în jur · W A S D / săgeți = mergi · Shift = alergi · rotița = binoclu · butoane pe ecran pentru tabletă
+- Flora: arbori kapok cu rădăcini-contrafort, palmieri açaí, ferigi arborescente, liane, frunze uriașe, heliconii, bromelii, trunchiuri căzute cu ciuperci, nuferi uriași Victoria
+- Fauna: jaguar, tapir, capibare, aguti, coati, furnicar, pecari, leneș, maimuțe urlătoare și maimuțe-veveriță, tucan, papagali ara, colibri, hoațin, vultur harpie, boa smarald, broaște săgeată-otrăvită, caiman, țestoase, anacondă, delfini roz, vidre, arapaima, piranii
+- Insecte și păianjeni: fluturi Morpho albaștri, fluturele-bufniță, furnici tăietoare de frunze (care cară bucăți de frunze!), tarantula Goliat, gândacul Hercule, lăcusta-frunză, insecta-băț, libelule
+- „🔎 Găsește vietăți” te duce pe rând la fiecare animal; click pe orice plantă sau animal → informații (RO/EN)
+- Pe calculatoarele mai slabe, calitatea scade automat (fără umbre); poți forța modul ușor cu `jungla.html?lite`
+
 **Publicare pe GitHub Pages**
-1. Creează un repo nou (de ex. `amazon-eva`) și încarcă `index.html`, `3d.html` și `README.md`.
+1. Creează un repo nou (de ex. `amazon-eva`) și încarcă `index.html`, `3d.html`, `jungla.html` și `README.md`.
 2. Settings → Pages → Source: *Deploy from a branch* → `main` / `root` → Save.
 3. Aplicația va fi la `https://<utilizator>.github.io/amazon-eva/`.
 

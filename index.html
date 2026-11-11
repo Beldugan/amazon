@@ -84,6 +84,7 @@
     <button class="btn on" id="btnLabels">🏷️ Nume</button>
     <button class="btn" id="btnAbout">ℹ️ Despre Amazon</button>
     <a class="btn go" id="btn3d" href="3d.html" style="text-decoration:none">🏔️ 3D</a>
+    <a class="btn go" id="btnJ" href="jungla.html" style="text-decoration:none">🚶 Junglă</a>
     <div class="lang"><button id="lRO" class="on">RO</button><button id="lEN">EN</button></div>
   </header>
   <div id="stage">
@@ -880,7 +881,7 @@ function updateButtons(){
   $('btnJourney').textContent=journey?u.stop:u.journey;
   $('btnSound').textContent=(soundOn?'🔊 ':'🔇 ')+u.sound;$('btnSound').classList.toggle('on',soundOn);
   $('btnLabels').textContent=u.labels;$('btnLabels').classList.toggle('on',labelsOn);
-  $('btnAbout').textContent=u.about;$('btn3d').textContent=lang==='ro'?'🏔️ Vezi în 3D':'🏔️ View in 3D';$('hint').textContent=u.hint;$('btnRead').textContent=u.read;
+  $('btnAbout').textContent=u.about;$('btn3d').textContent=lang==='ro'?'🏔️ Vezi în 3D':'🏔️ View in 3D';$('btnJ').textContent=lang==='ro'?'🚶 Plimbare în junglă':'🚶 Jungle walk';$('hint').textContent=u.hint;$('btnRead').textContent=u.read;
   document.documentElement.lang=lang;
   document.querySelectorAll('[data-t=atlantic]').forEach(e=>e.textContent=u.atlantic);
   document.querySelectorAll('[data-k=andes]').forEach(e=>e.textContent=u.andes);
