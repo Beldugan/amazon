@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Călătorie pe Amazon · Amazon River Journey</title>
+<style>
+  :root{
+    --ink:#173a2a; --card:#fffdf5; --accent:#ff8a3d; --leaf:#2f8f4e;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#0f3b26;font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;color:var(--ink);overflow:hidden}
+  #app{position:fixed;inset:0;display:flex;flex-direction:column}
+  header{display:flex;align-items:center;gap:10px;padding:8px 12px;background:linear-gradient(#1b5e3a,#154d30);color:#fff;flex-wrap:wrap;z-index:5}
+  header h1{font-size:clamp(16px,2.2vw,24px);margin:0 8px 0 0;letter-spacing:.5px}
+  header h1 span{color:#ffd166}
+  .btn{border:0;border-radius:999px;padding:8px 14px;font:inherit;font-weight:bold;font-size:clamp(13px,1.4vw,16px);cursor:pointer;background:#fff;color:var(--ink);box-shadow:0 3px 0 rgba(0,0,0,.25);transition:transform .1s}
+  .btn:hover{transform:translateY(-1px)}
+  .btn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.25)}
+  .btn.on{background:#ffd166}
+  .btn.go{background:var(--accent);color:#fff}
+  .lang{margin-left:auto;display:flex;background:rgba(255,255,255,.15);border-radius:999px;padding:3px}
+  .lang button{border:0;background:transparent;color:#fff;font:inherit;font-weight:bold;padding:6px 12px;border-radius:999px;cursor:pointer}
+  .lang button.on{background:#fff;color:var(--ink)}
+  #stage{position:relative;flex:1;min-height:0}
+  svg#map{width:100%;height:100%;display:block}
+  .hint{position:absolute;left:12px;bottom:10px;background:rgba(255,253,245,.92);padding:6px 12px;border-radius:12px;font-size:clamp(12px,1.3vw,15px);pointer-events:none}
+  /* info card */
+  #card{position:absolute;left:50%;bottom:16px;transform:translate(-50%,140%);width:min(560px,94%);background:var(--card);border-radius:20px;padding:14px 18px 14px 96px;box-shadow:0 10px 30px rgba(0,0,0,.35);border:4px solid #ffd166;transition:transform .35s cubic-bezier(.2,1.4,.4,1);z-index:6}
+  #card.show{transform:translate(-50%,0)}
+  #card .pic{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:64px;line-height:1;width:76px;text-align:center}
+  #card h2{margin:0 0 4px;font-size:clamp(18px,2vw,23px);color:#b54708}
+  #card p{margin:0;font-size:clamp(14px,1.55vw,18px);line-height:1.4}
+  #card .tools{margin-top:8px;display:flex;gap:8px;align-items:center}
+  #card .tools button{border:0;background:#e9f5ec;border-radius:999px;padding:5px 12px;font:inherit;font-weight:bold;cursor:pointer;color:var(--ink)}
+  #card .x{position:absolute;right:8px;top:6px;border:0;background:none;font-size:22px;cursor:pointer;color:#888}
+  #progress{position:absolute;left:0;right:0;top:0;height:6px;background:rgba(255,255,255,.25);display:none}
+  #progress div{height:100%;width:0;background:#ffd166}
+  /* about panel */
+  #about{position:absolute;inset:0;background:rgba(10,40,25,.55);display:none;align-items:center;justify-content:center;z-index:7}
+  #about.show{display:flex}
+  #about .box{background:var(--card);border-radius:22px;padding:20px 24px;width:min(620px,92%);max-height:88%;overflow:auto;border:4px solid #ffd166}
+  #about h2{margin:0 0 10px;color:#b54708}
+  #about ul{padding-left:0;list-style:none;margin:0}
+  #about li{padding:7px 0;border-bottom:1px dashed #d9cfa8;font-size:clamp(14px,1.6vw,18px)}
+  #about li b{font-size:1.2em;margin-right:6px}
+  #about .close{margin-top:12px}
+  /* svg bits */
+  .hot{cursor:pointer}
+  .hot .ring{animation:pulse 1.8s ease-out infinite;transform-box:fill-box;transform-origin:center}
+  @keyframes pulse{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2.1);opacity:0}}
+  .animal{cursor:pointer}
+  .animal text{user-select:none}
+  .label{font-weight:bold;paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round;pointer-events:none}
+  .labels-off .label{display:none}
+  .flow{stroke-dasharray:6 22;animation:flow 1.6s linear infinite}
+  @keyframes flow{to{stroke-dashoffset:-28}}
+  .fall{stroke-dasharray:10 8;animation:fall .5s linear infinite}
+  @keyframes fall{to{stroke-dashoffset:-18}}
+  .wave{animation:wave 3s ease-in-out infinite}
+  @keyframes wave{50%{transform:translateX(-10px)}}
+  .streak{animation:streak linear infinite}
+  @keyframes streak{to{stroke-dashoffset:-120}}
+  .ripple{transform-box:fill-box;transform-origin:center;animation:ripple 2.2s ease-out infinite}
+  @keyframes ripple{from{transform:scale(.4);opacity:.9}to{transform:scale(1.5);opacity:0}}
+  .lipflow{animation:lipflow 1.2s linear infinite}
+  @keyframes lipflow{to{stroke-dashoffset:-24}}
+  .sway{animation:sway 4s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 0}
+  @keyframes sway{50%{transform:rotate(9deg)}}
+  .bob{animation:bob 3s ease-in-out infinite}
+  @keyframes bob{50%{transform:translateY(-6px)}}
+  .cloud{animation:drift 60s linear infinite}
+  @keyframes drift{from{transform:translateX(-200px)}to{transform:translateX(1800px)}}
+  .tap{animation:tap .45s}
+  @keyframes tap{40%{transform:scale(1.35)}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1 id="title">🌿 Călătorie pe <span>Amazon</span></h1>
+    <button class="btn go" id="btnJourney">▶ Călătoria picăturii</button>
+    <button class="btn" id="btnSound">🔇 Sunete</button>
+    <button class="btn on" id="btnLabels">🏷️ Nume</button>
+    <button class="btn" id="btnAbout">ℹ️ Despre Amazon</button>
+    <a class="btn go" id="btn3d" href="3d.html" style="text-decoration:none">🏔️ 3D</a>
+    <div class="lang"><button id="lRO" class="on">RO</button><button id="lEN">EN</button></div>
+  </header>
+  <div id="stage">
+    <div id="progress"><div></div></div>
+    <svg id="map" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#8fd3ff"/><stop offset="1" stop-color="#d8f3ff"/>
+        </linearGradient>
+        <linearGradient id="jungle" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3f9a4f"/><stop offset="1" stop-color="#256e38"/>
+        </linearGradient>
+        <linearGradient id="riverGrad" gradientUnits="userSpaceOnUse" x1="380" y1="0" x2="1540" y2="0">
+          <stop offset="0" stop-color="#5fd0f5"/>
+          <stop offset="0.2" stop-color="#9fb98a"/>
+          <stop offset="0.35" stop-color="#c49a5c"/>
+          <stop offset="1" stop-color="#b98d55"/>
+        </linearGradient>
+        <linearGradient id="oceanGrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#2f8fd1"/><stop offset="1" stop-color="#145a9e"/>
+        </linearGradient>
+        <linearGradient id="mtn" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#8a7a6a"/><stop offset="1" stop-color="#5b6e45"/>
+        </linearGradient>
+        <linearGradient id="negroFade" gradientUnits="userSpaceOnUse" x1="1000" y1="0" x2="1150" y2="0">
+          <stop offset="0" stop-color="#2a1a10" stop-opacity=".95"/><stop offset="1" stop-color="#2a1a10" stop-opacity="0"/>
+        </linearGradient>
+        <radialGradient id="foam"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#bfefff" stop-opacity="0"/></radialGradient>
+        <linearGradient id="wSheet" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#1f6f9c" stop-opacity=".9"/><stop offset=".18" stop-color="#7fcfee"/>
+          <stop offset=".45" stop-color="#f4fdff"/><stop offset=".6" stop-color="#d4f3ff"/>
+          <stop offset=".85" stop-color="#5fb4dc"/><stop offset="1" stop-color="#17587f" stop-opacity=".9"/>
+        </linearGradient>
+        <linearGradient id="wFade" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity=".0"/><stop offset=".12" stop-color="#fff" stop-opacity=".35"/>
+          <stop offset=".85" stop-color="#fff" stop-opacity=".2"/><stop offset="1" stop-color="#fff" stop-opacity=".75"/>
+        </linearGradient>
+        <linearGradient id="rockBack" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3b322b"/><stop offset="1" stop-color="#241d18"/>
+        </linearGradient>
+        <linearGradient id="rockLit" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#b09a82"/><stop offset="1" stop-color="#7d6a58"/>
+        </linearGradient>
+        <linearGradient id="rockTop" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#c7b49c"/><stop offset="1" stop-color="#9a8670"/>
+        </linearGradient>
+        <radialGradient id="pool" cx=".5" cy=".4" r=".6">
+          <stop offset="0" stop-color="#e9fbff"/><stop offset=".35" stop-color="#7fd3ef"/><stop offset="1" stop-color="#1f7aa8"/>
+        </radialGradient>
+        <radialGradient id="rockBall" cx=".35" cy=".3" r=".8">
+          <stop offset="0" stop-color="#9c8f84"/><stop offset=".7" stop-color="#5d524a"/><stop offset="1" stop-color="#3a322c"/>
+        </radialGradient>
+        <filter id="mistBlur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3.2"/></filter>
+        <filter id="softBlur"><feGaussianBlur stdDeviation="1.2"/></filter>
+      </defs>
+
+      <!-- sky + clouds -->
+      <rect width="1600" height="900" fill="url(#sky)"/>
+      <g opacity=".9">
+        <g class="cloud" style="animation-delay:-10s"><ellipse cx="0" cy="60" rx="60" ry="18" fill="#fff"/><ellipse cx="30" cy="48" rx="40" ry="18" fill="#fff"/></g>
+        <g class="cloud" style="animation-delay:-35s;animation-duration:80s"><ellipse cx="0" cy="110" rx="70" ry="20" fill="#fff"/><ellipse cx="-30" cy="98" rx="40" ry="16" fill="#fff"/></g>
+        <g class="cloud" style="animation-delay:-55s;animation-duration:70s"><ellipse cx="0" cy="40" rx="50" ry="14" fill="#fff"/></g>
+      </g>
+      <!-- sun -->
+      <circle cx="1450" cy="70" r="42" fill="#ffd84d"/><circle cx="1450" cy="70" r="58" fill="#ffd84d" opacity=".25"/>
+
+      <!-- distant hills + jungle ground -->
+      <path d="M0,250 C150,215 300,240 450,220 S750,205 900,225 S1250,200 1600,225 L1600,900 L0,900Z" fill="#5aa860"/>
+      <path d="M0,275 C200,255 400,270 600,258 S1000,262 1200,252 S1450,262 1600,256 L1600,900 L0,900Z" fill="url(#jungle)"/>
+
+      <g id="treesBack"></g>
+
+      <!-- ocean -->
+      <g id="ocean">
+        <path d="M1500,262 C1480,350 1520,420 1505,470 C1495,520 1525,600 1500,700 C1490,780 1515,850 1505,900 L1600,900 L1600,262Z" fill="url(#oceanGrad)"/>
+        <g class="wave" stroke="#cfeeff" stroke-width="3" fill="none" stroke-linecap="round" opacity=".8">
+          <path d="M1530,330 q10,-8 20,0 t20,0"/><path d="M1550,420 q10,-8 20,0 t20,0"/>
+          <path d="M1530,610 q10,-8 20,0 t20,0"/><path d="M1555,720 q10,-8 20,0 t20,0"/><path d="M1535,820 q10,-8 20,0 t20,0"/>
+        </g>
+        <text class="label" x="1552" y="380" font-size="20" fill="#0b3b6e" text-anchor="middle" data-t="atlantic"
+          transform="rotate(90 1552 380)">Oceanul Atlantic</text>
+      </g>
+
+      <!-- river layers built by JS -->
+      <g id="tribs"></g>
+      <g id="river"></g>
+      <g id="streams"></g>
+
+      <!-- mountains (Andes) on the left -->
+      <g id="mountains">
+        <path d="M-10,660 L-10,250 L60,170 L105,215 L170,88 L222,165 L262,138 L305,205 L338,232 L372,330 L410,470 L440,600 L470,660Z" fill="url(#mtn)"/>
+        <path d="M150,128 L170,88 L192,122 L180,118 L171,132 L160,120Z" fill="#fff"/>
+        <path d="M48,184 L60,170 L74,186 L62,182Z" fill="#fff"/>
+        <path d="M250,150 L262,138 L276,160 L264,154Z" fill="#fff"/>
+        <path d="M170,88 L222,165 L205,260 L178,200Z M60,170 L105,215 L90,300 L66,240Z M262,138 L305,205 L292,280 L268,220Z M338,232 L372,330 L410,470 L360,400Z" fill="#000" opacity=".16"/>
+        <path d="M170,88 L150,180 L120,240 L105,215Z M262,138 L240,230 L222,165Z M60,170 L30,260 L-10,250Z" fill="#fff" opacity=".1"/>
+        <path d="M-10,660 C100,600 250,640 470,660 L470,680 L-10,680Z" fill="#4e8f45"/>
+      </g>
+      <g id="waterfalls"></g>
+
+      <!-- border + cities -->
+      <g id="places"></g>
+      <g id="treesFront"></g>
+      <g id="animals"></g>
+      <g id="hotspots"></g>
+      <g id="droplet" style="display:none"></g>
+    </svg>
+    <div class="hint" id="hint">👆 Apasă pe animale și pe steluțele ⭐ de pe râu!</div>
+
+    <div id="card">
+      <button class="x" id="cardX" aria-label="close">✕</button>
+      <div class="pic" id="cardPic">🌿</div>
+      <h2 id="cardTitle"></h2>
+      <p id="cardText"></p>
+      <div class="tools"><button id="btnRead">🔈 Citește-mi</button></div>
+    </div>
+
+    <div id="about"><div class="box">
+      <h2 id="aboutTitle"></h2>
+      <ul id="aboutList"></ul>
+      <button class="btn go close" id="aboutClose">OK</button>
+    </div></div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   TEXT RO / EN
+   ========================================================= */
+const UI = {
+  ro:{title:'🌿 Călătorie pe <span>Amazon</span>', journey:'▶ Călătoria picăturii', stop:'⏹ Oprește', sound:'Sunete',
+      labels:'🏷️ Nume', about:'ℹ️ Despre Amazon', hint:'👆 Apasă pe animale și pe steluțele ⭐ de pe râu!',
+      read:'🔈 Citește-mi', aboutTitle:'Râul Amazon – în cifre', atlantic:'Oceanul Atlantic', andes:'Munții Anzi',
+      end:'Picătura a ajuns în ocean! 🎉', endText:'Ai parcurs tot Amazonul: de la cascadele din Anzi până în Oceanul Atlantic. Poți apăsa iar pe animale și pe steluțe.'},
+  en:{title:'🌿 Journey down the <span>Amazon</span>', journey:'▶ The Droplet\'s Journey', stop:'⏹ Stop', sound:'Sounds',
+      labels:'🏷️ Names', about:'ℹ️ About the Amazon', hint:'👆 Tap the animals and the stars ⭐ on the river!',
+      read:'🔈 Read to me', aboutTitle:'The Amazon River – in numbers', atlantic:'Atlantic Ocean', andes:'Andes Mountains',
+      end:'The droplet reached the ocean! 🎉', endText:'You travelled the whole Amazon: from the waterfalls in the Andes to the Atlantic Ocean. Tap the animals and stars again any time.'}
+};
+
+const ABOUT = {
+  ro:[
+    ['📏','Lungime: aproximativ 6.400 km – unul dintre cele mai lungi două râuri din lume, alături de Nil.'],
+    ['💧','Este râul cu cea mai multă apă de pe Pământ: aduce cam o cincime din toată apa dulce pe care râurile o varsă în oceane.'],
+    ['🌊','Are peste 1.100 de afluenți (râuri care se varsă în el).'],
+    ['🗺️','Curge prin Peru, Columbia și Brazilia. Pădurea amazoniană se întinde în 9 țări.'],
+    ['🌉','Niciun pod nu traversează râul Amazon propriu-zis!'],
+    ['🌧️','În sezonul ploios, pe alocuri, râul se revarsă și ajunge să aibă zeci de kilometri lățime.']
+  ],
+  en:[
+    ['📏','Length: about 6,400 km – one of the two longest rivers in the world, together with the Nile.'],
+    ['💧','It carries more water than any other river on Earth: about one fifth of all the fresh water that rivers pour into the oceans.'],
+    ['🌊','It has more than 1,100 tributaries (rivers that flow into it).'],
+    ['🗺️','It flows through Peru, Colombia and Brazil. The Amazon rainforest spreads across 9 countries.'],
+    ['🌉','No bridge crosses the main Amazon River!'],
+    ['🌧️','In the rainy season it floods, and in some places it becomes tens of kilometres wide.']
+  ]
+};
+
+/* River points (stars). pos: x on the main river, or explicit x,y */
+const SPOTS = [
+  {id:'andes', pic:'🏔️', x:172, y:200,
+   ro:['Munții Anzi','Amazonul se naște sus, în Munții Anzi din Peru, la peste 5.000 de metri. Zăpada și gheața se topesc și formează pârâiașe cu apă rece și cristalină.'],
+   en:['The Andes Mountains','The Amazon is born high up in the Andes Mountains of Peru, more than 5,000 metres above the sea. Melting snow and ice make little streams of cold, crystal-clear water.']},
+  {id:'merge', pic:'🤝', x:400, y:600,
+   ro:['Cei trei afluenți se unesc','La poalele muntelui, cele trei pârâuri se unesc și devin un râu mare. În realitate, Marañón și Ucayali se întâlnesc lângă orașul Nauta, în Peru, și de aici râul primește numele Amazon.'],
+   en:['Three streams join together','At the foot of the mountain the three streams join and become one big river. In real life the Marañón and the Ucayali meet near the town of Nauta, in Peru, and from there the river is called the Amazon.']},
+  {id:'snake', pic:'🐍', rx:540,
+   ro:['Aici râul începe să șerpuiască','Pe câmpia plată, apa curge încet și sapă malurile în curbe, ca un șarpe. Aceste curbe se numesc meandre. Râul a curs spre nord, iar acum se întoarce spre est, către ocean.'],
+   en:['Here the river starts to snake','On the flat plain the water flows slowly and carves its banks into curves, like a snake. These curves are called meanders. The river was flowing north, and now it turns east, towards the ocean.']},
+  {id:'iquitos', pic:'🏙️', rx:715,
+   ro:['Iquitos (Peru)','Iquitos este cel mai mare oraș din lume la care nu poți ajunge cu mașina – doar cu barca sau cu avionul!'],
+   en:['Iquitos (Peru)','Iquitos is the largest city in the world that you cannot reach by car – only by boat or by plane!']},
+  {id:'border', pic:'🚩', rx:800,
+   ro:['Trei țări se întâlnesc','Aici se întâlnesc Peru, Columbia și Brazilia. În Brazilia, până la Manaus, râul se numește Solimões.'],
+   en:['Three countries meet','Here Peru, Colombia and Brazil meet. In Brazil, until the city of Manaus, the river is called the Solimões.']},
+  {id:'japura', pic:'➡️', trib:'japura',
+   ro:['Afluentul Japurá','Japurá vine din Columbia (acolo se numește Caquetá) și se varsă în Amazon din partea de nord.'],
+   en:['The Japurá tributary','The Japurá comes from Colombia (there it is called the Caquetá) and flows into the Amazon from the north.']},
+  {id:'purus', pic:'〰️', trib:'purus',
+   ro:['Afluentul Purus','Purus vine din sud și este unul dintre cele mai întortocheate râuri din lume – face mii de curbe!'],
+   en:['The Purus tributary','The Purus comes from the south and is one of the most winding rivers in the world – it makes thousands of bends!']},
+  {id:'negro', pic:'☕', trib:'negro',
+   ro:['Întâlnirea apelor – Manaus','Râul Negro are apa neagră, ca ceaiul, din cauza frunzelor putrezite. La Manaus întâlnește apa maronie și cele două curg una lângă alta, fără să se amestece, cam 6 km! De aici râul se numește Amazonas.'],
+   en:['The Meeting of the Waters – Manaus','The Rio Negro has dark water, like tea, because of rotting leaves. At Manaus it meets the brown water and the two flow side by side without mixing for about 6 km! From here the river is called the Amazonas.']},
+  {id:'madeira', pic:'🪵', trib:'madeira',
+   ro:['Afluentul Madeira','Madeira este cel mai lung afluent al Amazonului, cam 3.250 km. „Madeira” înseamnă „lemn” în portugheză, pentru că pe el plutesc mulți trunchiuri de copaci.'],
+   en:['The Madeira tributary','The Madeira is the Amazon\'s longest tributary, about 3,250 km long. "Madeira" means "wood" in Portuguese, because lots of tree trunks float on it.']},
+  {id:'tapajos', pic:'🏖️', trib:'tapajos',
+   ro:['Afluentul Tapajós – Santarém','Tapajós are apă limpede, albastru-verzuie, și plaje cu nisip alb. Se varsă în Amazon lângă orașul Santarém.'],
+   en:['The Tapajós tributary – Santarém','The Tapajós has clear, blue-green water and white sandy beaches. It joins the Amazon near the city of Santarém.']},
+  {id:'xingu', pic:'🌳', trib:'xingu',
+   ro:['Afluentul Xingu','Xingu are tot apă limpede. Pe malurile lui trăiesc multe popoare indigene, în Parcul Indigen Xingu, înființat în 1961.'],
+   en:['The Xingu tributary','The Xingu also has clear water. Many Indigenous peoples live along it, in the Xingu Indigenous Park, created in 1961.']},
+  {id:'mouth', pic:'🌊', x:1480, y:520,
+   ro:['Vărsarea în Oceanul Atlantic','Amazonul se varsă în Atlantic cu atâta apă dulce încât, în anul 1500, marinarul Vicente Pinzón a băut apă dulce departe în larg și a numit locul „Marea Dulce”. La gură se află insula Marajó, cam cât Elveția de mare.'],
+   en:['Flowing into the Atlantic Ocean','The Amazon pours so much fresh water into the Atlantic that in the year 1500 the sailor Vicente Pinzón drank fresh water far out at sea and called the place the "Sweet Sea". At the mouth lies Marajó Island, about as big as Switzerland.']},
+  {id:'pororoca', pic:'🏄', x:1548, y:560,
+   ro:['Pororoca – valul care urcă pe râu','De câteva ori pe an, mareea oceanului împinge un val uriaș în sus pe râu, înalt de până la 4 metri. Unii surferi îl călăresc zeci de minute!'],
+   en:['Pororoca – the wave that climbs the river','A few times a year the ocean tide pushes a huge wave up the river, up to 4 metres high. Some surfers ride it for many minutes!']}
+];
+
+const FALLS = [
+  {id:'f1', x:150, top:305, bottom:440, w:24,
+   ro:['Cascada Marañón','Marañón a fost mult timp considerat izvorul principal al Amazonului. La început curge spre nord, prin canioane foarte adânci.'],
+   en:['Marañón waterfall','For a long time the Marañón was thought to be the main source of the Amazon. At first it flows north, through very deep canyons.']},
+  {id:'f2', x:232, top:282, bottom:438, w:30,
+   ro:['Cascada Apurímac','Mulți ani s-a spus că cel mai îndepărtat izvor al Amazonului e pe muntele Mismi, de unde pornește Apurímac. Apa e rece, cristalină.'],
+   en:['Apurímac waterfall','For many years people said the farthest source of the Amazon was on Mount Mismi, where the Apurímac begins. The water is cold and crystal-clear.']},
+  {id:'f3', x:305, top:325, bottom:448, w:22,
+   ro:['Cascada Mantaro','În 2014, niște cercetători au măsurat din nou și au spus că poate râul Mantaro este, de fapt, cel mai îndepărtat izvor. Oamenii de știință încă discută!'],
+   en:['Mantaro waterfall','In 2014 some researchers measured again and said that the Mantaro River might really be the farthest source. Scientists are still discussing it!']}
+];
+
+const ANIMALS = [
+  {id:'llama', e:'🦙', x:85, y:560, s:34, move:'walk', range:40, dur:9,
+   ro:['Lama','Lama trăiește sus, în Munții Anzi, nu în junglă. Oamenii o folosesc de mii de ani ca să care bagaje.'],
+   en:['Llama','The llama lives high in the Andes Mountains, not in the jungle. People have used llamas to carry loads for thousands of years.']},
+  {id:'condor', e:'🦅', x:250, y:110, s:36, move:'circle', r:55, dur:14,
+   ro:['Condorul andin','Condorul andin este una dintre cele mai mari păsări zburătoare din lume: aripile lui deschise măsoară cam 3 metri!'],
+   en:['Andean condor','The Andean condor is one of the biggest flying birds in the world: its open wings are about 3 metres wide!']},
+  {id:'jaguar', e:'🐆', x:630, y:735, s:46, move:'walk', range:120, dur:16,
+   ro:['Jaguarul','Jaguarul este cea mai mare pisică sălbatică din America. Spre deosebire de multe pisici, îi place apa și înoată foarte bine.'],
+   en:['Jaguar','The jaguar is the biggest wild cat in the Americas. Unlike many cats, it loves water and is a great swimmer.']},
+  {id:'macaw', e:'🦜', x:700, y:300, s:36, move:'fly', range:500, dur:22,
+   ro:['Papagalul ara','Papagalii ara pot trăi peste 40 de ani. Mănâncă și puțin lut de pe malul râului, care îi ajută la digestie.'],
+   en:['Macaw','Macaws can live for more than 40 years. They even eat a little clay from the riverbank, which helps their tummies.']},
+  {id:'macaw2', e:'🦜', x:1150, y:320, s:30, move:'fly', range:380, dur:18, same:'macaw'},
+  {id:'monkey', e:'🐒', x:880, y:330, s:40, move:'swing',
+   ro:['Maimuța-veveriță','Maimuțele-veveriță trăiesc în grupuri mari, uneori de peste 100, și sar din copac în copac căutând fructe și insecte.'],
+   en:['Squirrel monkey','Squirrel monkeys live in big groups, sometimes more than 100, and leap from tree to tree looking for fruit and insects.']},
+  {id:'sloth', e:'🦥', x:1265, y:350, s:40, move:'swing', slow:true,
+   ro:['Leneșul','Leneșul se mișcă atât de încet încât pe blana lui cresc alge mici, care îl fac verzui. Coboară din copac cam o dată pe săptămână, ca să facă la toaletă!'],
+   en:['Sloth','The sloth moves so slowly that tiny algae grow on its fur and make it greenish. It climbs down from its tree about once a week – to go to the toilet!']},
+  {id:'caiman', e:'🐊', river:930, s:40, move:'drift', range:50, dur:18, dy:4,
+   ro:['Caimanul negru','Caimanul negru este rudă cu crocodilul și poate depăși 4 metri lungime. Stă la pândă în apă, cu doar ochii și nările afară.'],
+   en:['Black caiman','The black caiman is a relative of the crocodile and can grow longer than 4 metres. It waits in the water with only its eyes and nose showing.']},
+  {id:'dolphin', e:'🐬', river:1150, s:40, move:'jump', pink:true, dy:2,
+   ro:['Delfinul roz de râu','Delfinul de Amazon (boto) devine tot mai roz cu vârsta. Își poate întoarce capul, așa că înoată printre copacii din pădurea inundată.'],
+   en:['Pink river dolphin','The Amazon river dolphin (boto) gets pinker as it grows older. It can turn its head, so it swims between the trees of the flooded forest.']},
+  {id:'piranha', e:'🐟', river:840, s:28, move:'jump', red:true, dy:2, delay:1.5,
+   ro:['Pirania','Piraniile au burta roșie și dinți ascuțiți, dar nu sunt atât de periculoase ca în filme. Mănâncă pești, insecte și chiar semințe.'],
+   en:['Piranha','Piranhas have red bellies and sharp teeth, but they are not as dangerous as in the movies. They eat fish, insects and even seeds.']},
+  {id:'otter', e:'🦦', river:1330, s:34, move:'drift', range:40, dur:10, dy:3,
+   ro:['Vidra uriașă','Vidra uriașă poate avea aproape 2 metri cu tot cu coadă. Trăiește în familii și i se spune „lupul râului”.'],
+   en:['Giant otter','The giant otter can be almost 2 metres long, including its tail. It lives in families and is called the "river wolf".']},
+  {id:'frog', e:'🐸', x:520, y:790, s:30, move:'hop',
+   ro:['Broasca otrăvitoare','Broaștele săgeată-otrăvită au culori aprinse, care le spun prădătorilor: „Nu mă mânca, sunt otrăvitoare!”'],
+   en:['Poison dart frog','Poison dart frogs have bright colours that tell predators: "Don\'t eat me, I\'m poisonous!"']},
+  {id:'butterfly', e:'🦋', x:1000, y:760, s:30, move:'flutter',
+   ro:['Fluturele Morpho','Aripile fluturelui Morpho nu au vopsea albastră: solzișori minusculi reflectă lumina și le fac să strălucească albastru.'],
+   en:['Blue morpho butterfly','The blue morpho\'s wings have no blue paint: tiny scales reflect the light and make them shine blue.']},
+  {id:'toucan', svg:'toucan', x:1060, y:330, s:1, move:'bob',
+   ro:['Tucanul','Ciocul mare al tucanului este ușor, aproape gol pe dinăuntru, și îl ajută să se răcorească în căldura junglei.'],
+   en:['Toucan','The toucan\'s big beak is light, almost hollow inside, and helps the bird cool down in the jungle heat.']},
+  {id:'capybara', svg:'capybara', x:1150, y:700, s:1, move:'walk', range:60, dur:14,
+   ro:['Capibara','Capibara este cel mai mare rozător din lume. Înoată foarte bine și poate sta sub apă cam 5 minute.'],
+   en:['Capybara','The capybara is the biggest rodent in the world. It swims very well and can stay underwater for about 5 minutes.']},
+  {id:'giraffe', e:'🦒', x:470, y:860, s:46, move:'peek',
+   ro:['Hopa! O girafă?','Girafele NU trăiesc în Amazon! Ele trăiesc în savana din Africa. În pădurea amazoniană n-ar avea loc de copaci cu gâtul ei lung. 😄'],
+   en:['Oops! A giraffe?','Giraffes do NOT live in the Amazon! They live in the African savanna. In the Amazon rainforest its long neck would bump into all the trees. 😄']}
+];
+
+const TRIBS = {
+  japura:{side:'n', start:[770,268], join:860, w:7,  col:'#b8925a', ro:'Japurá', en:'Japurá', wig:1},
+  purus:{side:'s', start:[720,900], join:905, w:7,  col:'#b8925a', ro:'Purus', en:'Purus', wig:2.2},
+  negro:{side:'n', start:[920,262], join:1005, w:12, col:'#2a1a10', ro:'Rio Negro', en:'Rio Negro', wig:1},
+  madeira:{side:'s', start:[960,900], join:1075, w:12, col:'#c29a5e', ro:'Madeira', en:'Madeira', wig:1.2},
+  tapajos:{side:'s', start:[1180,900], join:1235, w:9, col:'#37a9a2', ro:'Tapajós', en:'Tapajós', wig:1},
+  xingu:{side:'s', start:[1360,900], join:1395, w:9, col:'#4ab6a5', ro:'Xingu', en:'Xingu', wig:1}
+};
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+const NS='http://www.w3.org/2000/svg';
+const $=id=>document.getElementById(id);
+function el(tag,attrs={},parent){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e;}
+let lang='ro';
+const T=o=>o[lang];
+
+/* Main river centerline */
+const RIVER_D="M400,600 C430,650 470,665 500,615 S545,515 585,560 S635,665 675,612 S725,520 772,555 C840,605 900,525 980,532 S1100,582 1180,542 S1320,500 1400,520 S1470,505 1530,500";
+const helper=el('path',{d:RIVER_D,fill:'none'},$('map'));
+const RLEN=helper.getTotalLength();
+const samples=[];
+for(let i=0;i<=600;i++){const p=helper.getPointAtLength(RLEN*i/600);samples.push({x:p.x,y:p.y,l:RLEN*i/600});}
+function riverAtX(x){let best=samples[0];for(const s of samples){if(Math.abs(s.x-x)<Math.abs(best.x-x))best=s;}return best;}
+function widthAt(t){return 7+ (t<0.25? t*60 : 15+ (t-0.25)*58);} // grows downstream
+function riverDist(x,y){let m=1e9;for(let i=0;i<samples.length;i+=3){const s=samples[i];const d=Math.hypot(s.x-x,s.y-y);if(d<m)m=d;}return m;}
+
+/* =========================================================
+   BUILD RIVER
+   ========================================================= */
+function buildRiver(){
+  const g=$('river');
+  const left=[],right=[];
+  for(let i=0;i<samples.length;i++){
+    const a=samples[Math.max(0,i-1)],b=samples[Math.min(samples.length-1,i+1)];
+    let nx=-(b.y-a.y),ny=b.x-a.x;const n=Math.hypot(nx,ny)||1;nx/=n;ny/=n;
+    const w=widthAt(i/(samples.length-1))/2;
+    left.push([samples[i].x+nx*w,samples[i].y+ny*w]);right.push([samples[i].x-nx*w,samples[i].y-ny*w]);
+    samples[i].nx=nx;samples[i].ny=ny;samples[i].w=w*2;
+  }
+  const poly=(pad)=>{
+    const L=left.map((p,i)=>[p[0]+samples[i].nx*pad,p[1]+samples[i].ny*pad]);
+    const R=right.map((p,i)=>[p[0]-samples[i].nx*pad,p[1]-samples[i].ny*pad]).reverse();
+    return 'M'+L.concat(R).map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' L')+'Z';
+  };
+  el('path',{d:poly(5),fill:'#e7cf95'},g);           // sandy banks
+  el('path',{d:poly(0),fill:'url(#riverGrad)'},g);
+  // Meeting of the waters: dark band on the north side after Manaus
+  const j=riverAtX(TRIBS.negro.join);const start=samples.indexOf(j);
+  const pts=[];
+  for(let i=start;i<start+90&&i<samples.length;i++){const s=samples[i];pts.push([s.x-s.nx*s.w*0.25,s.y-s.ny*s.w*0.25]);}
+  // north side = negative normal? pick whichever is closer to the north (smaller y)
+  const sTest=samples[start+5];const north = (sTest.ny>0)? -1 : 1;
+  const band=[];for(let i=start;i<start+90&&i<samples.length;i++){const s=samples[i];band.push([s.x+north*s.nx*s.w*0.25,s.y+north*s.ny*s.w*0.25]);}
+  el('path',{d:'M'+band.map(p=>p.join(',')).join(' L'),fill:'none',stroke:'url(#negroFade)','stroke-width':0,'stroke-linecap':'round',id:'negroBand'},g);
+  // stroke width varies — approximate with width at start
+  $('negroBand').setAttribute('stroke-width',(samples[start].w*0.48).toFixed(1));
+  // flowing highlights
+  el('path',{d:RIVER_D,fill:'none',stroke:'#fff','stroke-opacity':.45,'stroke-width':2.5,class:'flow','stroke-linecap':'round'},g);
+  // Marajó island at mouth
+  el('path',{d:'M1470,520 C1478,505 1505,500 1512,512 C1520,528 1500,548 1484,545 C1468,542 1464,530 1470,520Z',fill:'#5aa860',stroke:'#e7cf95','stroke-width':3},g);
+  // river labels
+  label('Amazon',1180,575,22,'#6b3d10','amazon');
+  label('Solimões',870,575,16,'#6b3d10','solimoes');
+  label('Marajó',1490,560,13,'#1f5c2b','marajo');
+}
+function label(txt,x,y,size,fill,key,anchor='middle'){
+  const t=el('text',{x,y,'font-size':size,fill,'text-anchor':anchor,class:'label'},$('places'));t.textContent=txt;if(key)t.dataset.k=key;return t;
+}
+
+/* Tributaries */
+function buildTribs(){
+  const g=$('tribs');
+  for(const k in TRIBS){
+    const t=TRIBS[k];const j=riverAtX(t.join);t.jx=j.x;t.jy=j.y;
+    const [sx,sy]=t.start;const dx=j.x-sx,dy=j.y-sy;
+    // wiggly path made of segments
+    const n=6;let d=`M${sx},${sy}`;
+    for(let i=1;i<=n;i++){
+      const f=i/n;const px=sx+dx*f,py=sy+dy*f;
+      const off=(i===n?0:Math.sin(i*1.9+sx)*22*t.wig);
+      const c1x=sx+dx*(f-0.5/n)+off,c1y=sy+dy*(f-0.5/n);
+      d+=` Q${c1x.toFixed(1)},${c1y.toFixed(1)} ${px.toFixed(1)},${py.toFixed(1)}`;
+    }
+    el('path',{d,fill:'none',stroke:'#e7cf95','stroke-width':t.w+6,'stroke-linecap':'round'},g);
+    el('path',{d,fill:'none',stroke:t.col,'stroke-width':t.w,'stroke-linecap':'round'},g);
+    el('path',{d,fill:'none',stroke:'#fff','stroke-opacity':.35,'stroke-width':1.5,class:'flow'},g);
+    const lp=el('path',{d},null);
+    const tmp=el('path',{d,fill:'none'},$('map'));const L=tmp.getTotalLength();const mid=tmp.getPointAtLength(L*0.45);
+    t.mid=tmp.getPointAtLength(L*0.62);tmp.remove();
+    const lab=label(t[lang],mid.x+(t.side==='n'?18:18),mid.y,15,'#183d27',null,'start');lab.dataset.trib=k;
+  }
+}
+
+/* Streams + waterfalls from the mountain */
+function buildFalls(){
+  const g=$('waterfalls');
+  const streamsG=el('g',{},g), fallsG=el('g',{},g);
+  const streamD=[
+    'M150,445 C160,520 255,540 325,575 S385,598 400,600',
+    'M232,442 C240,505 300,530 350,568 S392,598 400,600',
+    'M305,452 C318,500 358,540 380,574 S396,598 400,600'];
+  FALLS.forEach((f,i)=>{
+    el('path',{d:streamD[i],fill:'none',stroke:'#e7cf95','stroke-width':10,'stroke-linecap':'round'},streamsG);
+    el('path',{d:streamD[i],fill:'none',stroke:'#5fd0f5','stroke-width':6,'stroke-linecap':'round'},streamsG);
+    el('path',{d:streamD[i],fill:'none',stroke:'#fff','stroke-width':1.5,'stroke-opacity':.7,class:'flow'},streamsG);
+    drawFall3D(fallsG,f);
+  });
+  FALLS.forEach(f=>{const t=label(T(f)[0].split(' ').pop(),f.x,f.top-26,12,'#183d27');t.dataset.fall=f.id;});
+  label('Munții Anzi',172,232,18,'#3b2a1c','andes');
+}
+/* A waterfall drawn with depth: rocky niche, overflowing lip, water curtain with volume, plunge pool, mist */
+const mist=[];
+function drawFall3D(parent,f){
+  const x=f.x,T0=f.top,B=f.bottom,W=f.w,hw=W/2,D=8;
+  const jag=(x0,x1,dir)=>{let p='';const n=7;for(let k=1;k<n;k++){const yy=T0+(B-T0)*k/n;const xx=x0+(x1-x0)*k/n+dir*(k%2?4:-2)*(1+Math.random());p+=` L${xx.toFixed(1)},${yy.toFixed(1)}`;}return p;}; // D = depth of the niche
+  const grp=el('g',{class:'hot',tabindex:0},parent);
+  // --- rocky niche (back wall + side faces) ---
+  el('path',{d:`M${x-hw-D-6},${T0-4} L${x+hw+D+6},${T0-4} L${x+hw+D+10},${B+6} L${x-hw-D-10},${B+6}Z`,fill:'#000',opacity:.18,filter:'url(#softBlur)'},grp);
+  el('path',{d:`M${x-hw-4},${T0} L${x+hw+4},${T0} L${x+hw+8},${B} L${x-hw-8},${B}Z`,fill:'url(#rockBack)'},grp);           // wet back wall
+  el('path',{d:`M${x-hw-D-6},${T0-8} L${x-hw-4},${T0} L${x-hw-8},${B} L${x-hw-D-14},${B+4}`+jag(x-hw-D-14,x-hw-D-6,-1).split(' L').reverse().join(' L').replace(/ L$/,'')+'Z',fill:'url(#rockLit)'},grp);     // left face (sunlit)
+  el('path',{d:`M${x+hw+D+6},${T0-8} L${x+hw+4},${T0} L${x+hw+8},${B} L${x+hw+D+14},${B+4}`+jag(x+hw+D+14,x+hw+D+6,1).split(' L').reverse().join(' L').replace(/ L$/,'')+'Z',fill:'#4f4238'},grp);          // right face (shade)
+  // cracks & moss on the side faces
+  el('path',{d:`M${x-hw-D},${T0+20} l5,14 l-3,12 M${x-hw-D-4},${T0+60} l6,10`,stroke:'#6e5c4c','stroke-width':1.5,fill:'none'},grp);
+  el('path',{d:`M${x+hw+D},${T0+30} l-4,16 l3,10`,stroke:'#3a3029','stroke-width':1.5,fill:'none'},grp);
+  [[x-hw-D-6,T0+44,5],[x-hw-D-10,B-18,6],[x+hw+D+8,B-30,5],[x+hw+D+2,T0+12,4]].forEach(([cx,cy,r])=>
+    el('ellipse',{cx,cy,rx:r,ry:r*.7,fill:'#4f8a3a',opacity:.9},grp));
+  // --- top ledge: a slab seen from above, with the river running on it towards us ---
+  el('path',{d:`M${x-hw-D-10},${T0-16} L${x+hw+D+10},${T0-16} L${x+hw+D+6},${T0-8} L${x-hw-D-6},${T0-8}Z`,fill:'url(#rockTop)'},grp);
+  el('path',{d:`M${x-hw-D-6},${T0-8} L${x+hw+D+6},${T0-8} L${x+hw+4},${T0} L${x-hw-4},${T0}Z`,fill:'#8a7663'},grp);
+  // river on top of the ledge (perspective: narrow far away, wide at the lip)
+  el('path',{d:`M${x-hw*.45},${T0-30} L${x+hw*.45},${T0-30} L${x+hw+1},${T0-1} L${x-hw-1},${T0-1}Z`,fill:'#3fa9d6'},grp);
+  el('path',{d:`M${x},${T0-30} L${x},${T0-2}`,stroke:'#dff6ff','stroke-width':W*.35,'stroke-dasharray':'5 7',class:'lipflow',opacity:.7},grp);
+  // --- water curtain: bulges out at the lip, widens as it falls ---
+  const sheet=`M${x-hw},${T0-1} C${x-hw-1},${T0+8} ${x-hw-3},${T0+20} ${x-hw-4},${T0+34} L${x-hw-7},${B} L${x+hw+7},${B} L${x+hw+4},${T0+34} C${x+hw+3},${T0+20} ${x+hw+1},${T0+8} ${x+hw},${T0-1}Z`;
+  const cid='clip_'+f.id;const cp=el('clipPath',{id:cid},$('map').querySelector('defs'));el('path',{d:sheet},cp);
+  el('path',{d:sheet,fill:'url(#wSheet)',opacity:.95},grp);
+  const streaks=el('g',{'clip-path':`url(#${cid})`},grp);
+  const pats=[[20,40],[30,30],[10,50],[15,25],[8,32],[24,36]];
+  for(let k=0;k<Math.round(W*0.9);k++){
+    const sx=x-hw-6+Math.random()*(W+12);const [da,db]=pats[k%pats.length];
+    const dur=(0.45+Math.random()*0.5).toFixed(2);
+    el('line',{x1:sx,y1:T0-4,x2:sx+(sx-x)*0.12,y2:B+4,stroke:'#fff','stroke-width':(0.8+Math.random()*2).toFixed(1),
+      'stroke-opacity':(0.35+Math.random()*0.55).toFixed(2),'stroke-dasharray':`${da} ${db}`,'stroke-linecap':'round',
+      class:'streak',style:`animation-duration:${dur}s;animation-delay:-${(Math.random()*2).toFixed(2)}s`},streaks);
+  }
+  el('path',{d:sheet,fill:'url(#wFade)'},grp);                  // white foam at lip & base
+  el('path',{d:`M${x-hw},${T0} Q${x},${T0-5} ${x+hw},${T0}`,stroke:'#fff','stroke-width':3,fill:'none',opacity:.9},grp); // glossy lip
+  // --- plunge pool (ellipse in perspective) ---
+  const py=B+4;
+  el('ellipse',{cx:x,cy:py+2,rx:W+16,ry:9,fill:'#0e4f73',opacity:.6},grp);
+  el('ellipse',{cx:x,cy:py,rx:W+14,ry:8,fill:'url(#pool)'},grp);
+  for(let r=0;r<3;r++)el('ellipse',{cx:x,cy:py,rx:W*.9,ry:5,fill:'none',stroke:'#fff','stroke-width':1.4,class:'ripple',style:`animation-delay:-${(r*0.73).toFixed(2)}s`},grp);
+  el('ellipse',{cx:x,cy:py-2,rx:hw+8,ry:5,fill:'#fff',opacity:.95,filter:'url(#softBlur)'},grp);   // churning foam
+  // wet boulders around the pool
+  [[-W-12,2,7,5],[-W-2,7,5,4],[W+10,3,8,6],[W+2,8,4,3],[-hw-2,9,4,3]].forEach(([dx,dy,rx,ry])=>{
+    el('ellipse',{cx:x+dx,cy:py+dy,rx,ry,fill:'url(#rockBall)'},grp);
+    el('ellipse',{cx:x+dx-rx*.3,cy:py+dy-ry*.4,rx:rx*.3,ry:ry*.2,fill:'#fff',opacity:.5},grp);
+  });
+  // --- mist particles (animated in JS) ---
+  const mg=el('g',{filter:'url(#mistBlur)','pointer-events':'none'},grp);
+  for(let k=0;k<9;k++){const c=el('circle',{r:4,fill:'#fff',opacity:0},mg);mist.push({c,x,y:py-4,w:W,age:Math.random(),life:1.6+Math.random()*1.4,vx:0,ox:0});}
+  // spray droplets
+  const sg=el('g',{'pointer-events':'none'},grp);
+  for(let k=0;k<6;k++){const c=el('circle',{r:1.4,fill:'#fff'},sg);mist.push({c,x,y:py-4,w:W,age:Math.random(),life:.6+Math.random()*.4,spray:true});}
+  f.el=grp;
+  grp.addEventListener('click',()=>{if(soundOn)splash();showInfo('💦',T(f)[0],T(f)[1],grp);});
+}
+let lastMist=0;
+function animateMist(t){
+  const dt=Math.min(.05,t-(lastMist||t));lastMist=t;
+  for(const m of mist){
+    m.age+=dt/m.life;
+    if(m.age>=1){m.age=0;m.ox=(Math.random()-.5)*m.w*1.2;m.vx=(Math.random()-.5)*(m.spray?40:14);m.vy=m.spray?-(25+Math.random()*25):0;}
+    const a=m.age;
+    if(m.spray){const x=m.x+m.ox+m.vx*a*m.life, y=m.y+m.vy*a*m.life+60*a*a*m.life*m.life;
+      m.c.setAttribute('cx',x.toFixed(1));m.c.setAttribute('cy',y.toFixed(1));m.c.setAttribute('opacity',(1-a).toFixed(2));}
+    else{const x=m.x+m.ox+m.vx*a*m.life*2, y=m.y-a*28;
+      m.c.setAttribute('cx',x.toFixed(1));m.c.setAttribute('cy',y.toFixed(1));m.c.setAttribute('r',(4+a*9).toFixed(1));
+      m.c.setAttribute('opacity',(Math.sin(a*Math.PI)*.75).toFixed(2));}
+  }
+}
+/* Places: border + cities */
+function buildPlaces(){
+  const g=$('places');
+  // border line Peru | Brazil
+  el('path',{d:'M800,268 C790,400 815,500 800,560 C790,640 812,760 800,900',fill:'none',stroke:'#fff','stroke-width':2.5,'stroke-dasharray':'8 7',opacity:.75},g);
+  label('PERU',650,720,16,'#fff','peru').setAttribute('style','stroke:#1f5c2b');
+  label('COLOMBIA',700,300,14,'#fff','colombia').setAttribute('style','stroke:#1f5c2b');
+  label('BRASIL',880,880,16,'#fff','brasil').setAttribute('style','stroke:#1f5c2b');
+  const cities=[['Iquitos',715],['Manaus',1005],['Santarém',1235]];
+  cities.forEach(([n,x])=>{const p=riverAtX(x);const c=el('g',{},g);
+    el('rect',{x:p.x-7,y:p.y-34,width:14,height:14,fill:'#fff',stroke:'#7a4a1a','stroke-width':2,rx:2},c);
+    el('path',{d:`M${p.x-9},${p.y-34} L${p.x},${p.y-43} L${p.x+9},${p.y-34}Z`,fill:'#d9534f'},c);
+    if(n==='Manaus')label(n,p.x+12,p.y-30,13,'#5a2e0a',null,'start');else label(n,p.x,p.y-48,13,'#5a2e0a');});
+  const bx=1470,by=618;el('rect',{x:bx-7,y:by-14,width:14,height:14,fill:'#fff',stroke:'#7a4a1a','stroke-width':2,rx:2},g);
+  el('path',{d:`M${bx-9},${by-14} L${bx},${by-23} L${bx+9},${by-14}Z`,fill:'#d9534f'},g);label('Belém',bx-10,by+18,13,'#5a2e0a');
+}
+
+/* Jungle trees (procedural, avoiding the river) */
+function rnd(a,b){return a+Math.random()*(b-a);}
+function buildTrees(){
+  const back=$('treesBack'),front=$('treesFront');
+  const greens=['#1f6b34','#2a7f3e','#2f8f4e','#3c9d55','#4aa85f','#23753a'];
+  // seeded-ish random for consistency
+  let seed=7;const _r=Math.random;Math.random=function(){seed=(seed*9301+49297)%233280;return seed/233280;};
+  for(let i=0;i<520;i++){
+    const x=rnd(430,1495),y=rnd(268,900);
+    if(riverDist(x,y)<34)continue;
+    let skip=false;for(const k in TRIBS){if(nearTrib(k,x,y))skip=true;}if(skip)continue;
+    const r=rnd(10,22);const g=el('g',{},y<430?back:back);
+    el('circle',{cx:x+3,cy:y+4,r:r,fill:'#000',opacity:.12},g);
+    el('circle',{cx:x,cy:y,r:r,fill:greens[Math.floor(rnd(0,greens.length))]},g);
+    el('circle',{cx:x-r*.3,cy:y-r*.35,r:r*.45,fill:'#fff',opacity:.10},g);
+  }
+  // jungle at mountain foot (left bottom)
+  for(let i=0;i<70;i++){const x=rnd(0,420),y=rnd(670,900);if(Math.hypot(x-400,y-600)<40)continue;
+    const r=rnd(10,20);el('circle',{cx:x,cy:y,r,fill:greens[Math.floor(rnd(0,greens.length))]},back);}
+  // palm trees in front
+  const palms=[[470,700],[560,470],[760,440],[950,640],[1100,450],[1320,620],[1420,430],[660,820],[1230,800]];
+  palms.forEach(([x,y])=>{if(riverDist(x,y)<40)return;const g=el('g',{class:'sway',style:`animation-delay:-${rnd(0,4)}s`},front);
+    el('path',{d:`M${x},${y} q4,-30 0,-56`,stroke:'#7a5230','stroke-width':5,fill:'none'},g);
+    for(let a=0;a<6;a++){const ang=a*60*Math.PI/180;el('path',{d:`M${x},${y-56} q${Math.cos(ang)*20},${-12+Math.sin(ang)*6} ${Math.cos(ang)*34},${Math.sin(ang)*18+6}`,stroke:'#2e8b3d','stroke-width':6,fill:'none','stroke-linecap':'round'},g);} });
+  // big trees with branches for monkey/sloth/toucan
+  [[880,300],[1265,320],[1060,305]].forEach(([x,y])=>{const g=el('g',{},front);
+    el('rect',{x:x-5,y:y,width:10,height:60,fill:'#7a5230'},g);
+    el('circle',{cx:x,cy:y-6,r:30,fill:'#256e38'},g);el('circle',{cx:x-22,cy:y+4,r:20,fill:'#2f8f4e'},g);el('circle',{cx:x+22,cy:y+2,r:22,fill:'#2a7f3e'},g);});
+  Math.random=_r;
+}
+const tribCache={};
+function nearTrib(k,x,y){const t=TRIBS[k];const [sx,sy]=t.start;const dx=t.jx-sx,dy=t.jy-sy;const L2=dx*dx+dy*dy;let u=((x-sx)*dx+(y-sy)*dy)/L2;u=Math.max(0,Math.min(1,u));return Math.hypot(sx+u*dx-x,sy+u*dy-y)<30+22*t.wig;}
+
+/* =========================================================
+   ANIMALS
+   ========================================================= */
+const animEls=[];
+function buildAnimals(){
+  const g=$('animals');
+  ANIMALS.forEach(a=>{
+    const info=a.same?ANIMALS.find(b=>b.id===a.same):a;
+    let x=a.x,y=a.y;
+    if(a.river){const p=riverAtX(a.river);x=p.x;y=p.y+(a.dy||0);}
+    const outer=el('g',{class:'animal',transform:`translate(${x},${y})`},g);
+    const inner=el('g',{},outer);
+    if(a.svg==='toucan')drawToucan(inner);
+    else if(a.svg==='capybara')drawCapybara(inner);
+    else{const t=el('text',{'font-size':a.s,'text-anchor':'middle','dominant-baseline':'central'},inner);t.textContent=a.e;
+      if(a.pink)t.setAttribute('style','filter:hue-rotate(115deg) saturate(1.6) brightness(1.1)');
+      if(a.red)t.setAttribute('style','filter:hue-rotate(160deg) saturate(1.4)');}
+    // bigger invisible hit area
+    el('circle',{r:Math.max(26,(a.s||30)*0.7),fill:'transparent'},outer);
+    outer.addEventListener('click',()=>{inner.classList.remove('tap');void inner.getBBox();inner.classList.add('tap');
+      animalSound(info.id);showInfo(a.e||(a.svg==='toucan'?'🐦':'🐹'),T(info)[0],T(info)[1],outer,a.svg);});
+    animEls.push({a,outer,inner,x,y,ph:Math.random()*10});
+  });
+}
+function drawToucan(g){
+  el('ellipse',{cx:0,cy:6,rx:10,ry:16,fill:'#111'},g);
+  el('ellipse',{cx:0,cy:0,rx:8,ry:7,fill:'#ffe066'},g);
+  el('circle',{cx:2,cy:-6,r:7,fill:'#111'},g);
+  el('circle',{cx:4,cy:-7,r:2.6,fill:'#5bc0eb'},g);el('circle',{cx:4.5,cy:-7,r:1.2,fill:'#000'},g);
+  el('path',{d:'M7,-9 C22,-12 30,-6 32,-1 C24,-2 14,-2 7,-3Z',fill:'#ff8c1a'},g);
+  el('path',{d:'M28,-4 C30,-3 31,-2 32,-1 L27,-2Z',fill:'#111'},g);
+  el('path',{d:'M-6,20 L-10,30 M4,20 L6,30',stroke:'#555','stroke-width':2},g);
+  el('rect',{x:-30,y:22,width:50,height:5,rx:2,fill:'#7a5230'},g);
+}
+function drawCapybara(g){
+  el('ellipse',{cx:0,cy:0,rx:24,ry:13,fill:'#9a6b3f'},g);
+  el('ellipse',{cx:-22,cy:-6,rx:12,ry:9,fill:'#8a5d34'},g);
+  el('rect',{x:-36,y:-10,width:10,height:10,rx:4,fill:'#7a4f2a'},g);
+  el('circle',{cx:-24,cy:-9,r:1.8,fill:'#000'},g);
+  el('ellipse',{cx:-18,cy:-15,rx:3,ry:2,fill:'#6b4423'},g);
+  [-14,-4,8,16].forEach(x=>el('rect',{x,y:9,width:5,height:9,rx:2,fill:'#7a4f2a'},g));
+}
+
+function animate(time){
+  const t=time/1000;
+  for(const o of animEls){
+    const a=o.a;let x=o.x,y=o.y,sx=1,rot=0;
+    switch(a.move){
+      case 'walk':{const p=(t/a.dur+o.ph)%1;const k=p<.5?p*2:2-p*2;x=o.x+(k-.5)*a.range;sx=p<.5?-1:1;y=o.y+Math.abs(Math.sin(t*6))*-2;break;}
+      case 'drift':{const p=(t/a.dur+o.ph)%1;const k=p<.5?p*2:2-p*2;const rx=riverAtXcached(a.river+(k-.5)*a.range);x=rx.x;y=rx.y+(a.dy||0)+Math.sin(t*2)*1.5;sx=p<.5?-1:1;break;}
+      case 'fly':{const p=(t/a.dur+o.ph)%1;x=o.x+(p-.5)*a.range*2;y=o.y+Math.sin(p*Math.PI*4)*25;sx=-1;
+        if(x>1480)x-=0;break;}
+      case 'circle':{const ang=t/a.dur*Math.PI*2+o.ph;x=o.x+Math.cos(ang)*a.r;y=o.y+Math.sin(ang)*a.r*.4;sx=Math.sin(ang)>0?1:-1;break;}
+      case 'swing':{rot=Math.sin(t*(a.slow?0.6:2.2)+o.ph)*(a.slow?10:28);y=o.y+28;
+        o.outer.setAttribute('transform',`translate(${o.x},${o.y})`);o.inner.setAttribute('transform',`rotate(${rot}) translate(0,${30})`);
+        drawVine(o);continue;}
+      case 'jump':{const per=5,p=((t+(a.delay||0)+o.ph)%per)/per;if(p<.3){const k=p/.3;y=o.y-Math.sin(k*Math.PI)*40;x=o.x+(k-.5)*50;rot=(k-.5)*-80;}else{y=o.y+40;} // hidden under water
+        o.inner.style.opacity=p<.3?1:0;break;}
+      case 'hop':{const p=(t*0.7+o.ph)%1;y=o.y-(p<.35?Math.sin(p/.35*Math.PI)*22:0);x=o.x+Math.sin(t*0.35)*30;sx=Math.cos(t*0.35)>0?-1:1;break;}
+      case 'flutter':{x=o.x+Math.sin(t*0.5)*80+Math.sin(t*1.7)*15;y=o.y+Math.cos(t*0.8)*30+Math.sin(t*5)*4;break;}
+      case 'bob':{y=o.y+Math.sin(t*2+o.ph)*2;rot=Math.sin(t*1.3)*8;break;}
+      case 'peek':{const p=(t%9)/9;const k=p<.15?p/.15:p<.6?1:p<.75?1-(p-.6)/.15:0;y=o.y+40-k*40;break;}
+    }
+    o.outer.setAttribute('transform',`translate(${x.toFixed(1)},${y.toFixed(1)})`);
+    o.inner.setAttribute('transform',`scale(${sx},1) rotate(${rot.toFixed(1)})`);
+  }
+  animateSnake(t);
+  animateMist(t);
+  animateDroplet(time);
+  requestAnimationFrame(animate);
+}
+const rxCache={};function riverAtXcached(x){const k=Math.round(x);return rxCache[k]||(rxCache[k]=riverAtX(k));}
+function drawVine(o){
+  if(!o.vine){o.vine=el('line',{stroke:'#3d6b2a','stroke-width':3,'stroke-linecap':'round'},o.outer);o.outer.insertBefore(o.vine,o.inner);}
+  const rot=parseFloat(/rotate\(([-\d.]+)/.exec(o.inner.getAttribute('transform'))[1])*Math.PI/180;
+  o.vine.setAttribute('x1',0);o.vine.setAttribute('y1',-6);
+  o.vine.setAttribute('x2',(-Math.sin(rot)*16).toFixed(1));o.vine.setAttribute('y2',(Math.cos(rot)*16).toFixed(1));
+}
+
+/* Anaconda swimming along the first meanders */
+let snake;
+function buildSnake(){
+  const g=el('g',{class:'animal'},$('animals'));
+  const d=RIVER_D.split(' C772')[0]; // the meander part only
+  const p=el('path',{d:"M400,600 C430,650 470,665 500,615 S545,515 585,560 S635,665 675,612 S725,520 772,555",fill:'none'},g);
+  const L=p.getTotalLength();
+  const body=el('path',{d:p.getAttribute('d'),fill:'none',stroke:'#3e7d2b','stroke-width':9,'stroke-linecap':'round','stroke-dasharray':`70 ${L}`},g);
+  const spots=el('path',{d:p.getAttribute('d'),fill:'none',stroke:'#1f4417','stroke-width':4,'stroke-linecap':'round','stroke-dasharray':`4 9`},g);
+  const clip=el('clipPath',{id:'snakeClip'},$('map').querySelector('defs'));
+  const clipPath=el('path',{d:p.getAttribute('d'),fill:'none',stroke:'#fff','stroke-width':12,'stroke-dasharray':`70 ${L}`},null);
+  const mask=el('mask',{id:'snakeMask'},$('map').querySelector('defs'));
+  el('rect',{x:0,y:0,width:1600,height:900,fill:'#000'},mask);mask.appendChild(clipPath);
+  spots.setAttribute('mask','url(#snakeMask)');
+  const head=el('g',{},g);
+  el('ellipse',{cx:0,cy:0,rx:10,ry:7,fill:'#3e7d2b'},head);
+  el('circle',{cx:4,cy:-3,r:2.2,fill:'#fff'},head);el('circle',{cx:4.6,cy:-3,r:1.1,fill:'#000'},head);
+  el('circle',{cx:4,cy:3,r:2.2,fill:'#fff'},head);el('circle',{cx:4.6,cy:3,r:1.1,fill:'#000'},head);
+  const tongue=el('path',{d:'M10,0 L16,0 L19,-3 M16,0 L19,3',stroke:'#e03131','stroke-width':1.5,fill:'none'},head);
+  el('rect',{x:380,y:500,width:420,height:200,fill:'transparent'},g).style.pointerEvents='none';
+  snake={p,L,body,clipPath,head,tongue};
+  g.addEventListener('click',()=>{animalSound('snake');showInfo('🐍',T(SNAKE)[0],T(SNAKE)[1],head);});
+}
+const SNAKE={ro:['Anaconda verde','Anaconda verde este cel mai greu șarpe din lume. Stă mult în apă, unde se mișcă ușor, șerpuind – exact ca râul de aici!'],
+             en:['Green anaconda','The green anaconda is the heaviest snake in the world. It spends a lot of time in the water, where it moves easily, snaking along – just like the river here!']};
+function animateSnake(t){
+  if(!snake)return;const per=26;const p=(t%per)/per;const k=p<.5?p*2:2-p*2;const fwd=p<.5;
+  const segLen=70;const headPos=fwd? 70+k*(snake.L-80) : 70+k*(snake.L-80);
+  const off=-(headPos-segLen);
+  snake.body.setAttribute('stroke-dashoffset',off);snake.clipPath.setAttribute('stroke-dashoffset',off);
+  const endP=fwd?headPos:headPos-segLen;
+  const hp=snake.p.getPointAtLength(fwd?headPos:headPos-segLen);
+  const hp2=snake.p.getPointAtLength(fwd?headPos-2:headPos-segLen+2);
+  const ang=Math.atan2(hp.y-hp2.y,hp.x-hp2.x)*180/Math.PI;
+  const wob=Math.sin(t*8)*6;
+  snake.head.setAttribute('transform',`translate(${hp.x.toFixed(1)},${hp.y.toFixed(1)}) rotate(${(ang+wob).toFixed(1)})`);
+  snake.tongue.style.opacity=(Math.sin(t*5)>0.3)?1:0;
+}
+
+/* =========================================================
+   HOTSPOTS (stars)
+   ========================================================= */
+function buildHotspots(){
+  const g=$('hotspots');
+  SPOTS.forEach(s=>{
+    let x=s.x,y=s.y;
+    if(s.rx){const p=riverAtX(s.rx);x=p.x;y=p.y;}
+    if(s.trib){const t=TRIBS[s.trib];x=t.mid.x;y=t.mid.y;}
+    s.px=x;s.py=y;
+    const h=el('g',{class:'hot',transform:`translate(${x},${y})`},g);
+    el('circle',{r:12,fill:'#ffd166',class:'ring'},h);
+    el('circle',{r:13,fill:'#ff8a3d',stroke:'#fff','stroke-width':3},h);
+    const st=el('text',{'font-size':15,'text-anchor':'middle','dominant-baseline':'central',fill:'#fff'},h);st.textContent='★';
+    h.addEventListener('click',()=>showInfo(s.pic,T(s)[0],T(s)[1],h));
+    s.el=h;
+  });
+}
+
+/* =========================================================
+   INFO CARD + speech
+   ========================================================= */
+let current=null;
+function showInfo(pic,title,text,src,svgKind){
+  $('cardPic').textContent=pic;$('cardTitle').textContent=title;$('cardText').textContent=text;
+  $('card').classList.add('show');current={title,text};
+  if(window.speechSynthesis)speechSynthesis.cancel();
+  blip();
+}
+$('cardX').onclick=()=>{$('card').classList.remove('show');if(window.speechSynthesis)speechSynthesis.cancel();};
+$('btnRead').onclick=()=>{
+  if(!current||!window.speechSynthesis)return;speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(current.title+'. '+current.text);
+  u.lang=lang==='ro'?'ro-RO':'en-GB';u.rate=.92;
+  const v=speechSynthesis.getVoices().find(v=>v.lang&&v.lang.toLowerCase().startsWith(lang));if(v)u.voice=v;
+  speechSynthesis.speak(u);
+};
+
+/* =========================================================
+   SOUND (synthesised with Web Audio – no files needed)
+   ========================================================= */
+let ctx=null,master=null,soundOn=false,birdTimer=null;
+function initAudio(){
+  if(ctx)return;ctx=new (window.AudioContext||window.webkitAudioContext)();
+  master=ctx.createGain();master.gain.value=0;master.connect(ctx.destination);
+  // river / waterfall noise
+  const len=ctx.sampleRate*3,buf=ctx.createBuffer(1,len,ctx.sampleRate),d=buf.getChannelData(0);
+  let last=0;for(let i=0;i<len;i++){const w=Math.random()*2-1;last=(last+0.02*w)/1.02;d[i]=last*3.5;}
+  const src=ctx.createBufferSource();src.buffer=buf;src.loop=true;
+  const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=900;
+  const g=ctx.createGain();g.gain.value=.35;src.connect(lp).connect(g).connect(master);src.start();
+  // insects: high buzzing
+  const o=ctx.createOscillator();o.type='sawtooth';o.frequency.value=4200;
+  const og=ctx.createGain();og.gain.value=0;const lfo=ctx.createOscillator();lfo.frequency.value=13;const lg=ctx.createGain();lg.gain.value=.006;
+  lfo.connect(lg).connect(og.gain);const hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=3000;
+  o.connect(hp).connect(og).connect(master);o.start();lfo.start();
+}
+function chirp(f0=2400,f1=3600,dur=.12,vol=.08,delay=0){
+  if(!ctx||!soundOn)return;const t=ctx.currentTime+delay;
+  const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';
+  o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+dur);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(g).connect(master);o.start(t);o.stop(t+dur+.05);
+}
+function croak(delay=0){if(!ctx||!soundOn)return;const t=ctx.currentTime+delay;
+  const o=ctx.createOscillator(),g=ctx.createGain();o.type='square';o.frequency.setValueAtTime(140,t);o.frequency.linearRampToValueAtTime(90,t+.18);
+  const f=ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=600;
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.12,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+.2);
+  o.connect(f).connect(g).connect(master);o.start(t);o.stop(t+.25);}
+function growl(){if(!ctx||!soundOn)return;const t=ctx.currentTime;
+  const o=ctx.createOscillator(),g=ctx.createGain(),f=ctx.createBiquadFilter();o.type='sawtooth';o.frequency.setValueAtTime(90,t);o.frequency.linearRampToValueAtTime(60,t+.6);
+  f.type='lowpass';f.frequency.value=400;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.2,t+.08);g.gain.exponentialRampToValueAtTime(.0001,t+.7);
+  o.connect(f).connect(g).connect(master);o.start(t);o.stop(t+.8);}
+function hiss(){if(!ctx||!soundOn)return;const t=ctx.currentTime;const len=ctx.sampleRate*.6,b=ctx.createBuffer(1,len,ctx.sampleRate),d=b.getChannelData(0);
+  for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*(1-i/len);const s=ctx.createBufferSource();s.buffer=b;const f=ctx.createBiquadFilter();f.type='highpass';f.frequency.value=4000;
+  const g=ctx.createGain();g.gain.value=.15;s.connect(f).connect(g).connect(master);s.start(t);}
+function splash(){if(!ctx||!soundOn)return;const t=ctx.currentTime;const len=ctx.sampleRate*.4,b=ctx.createBuffer(1,len,ctx.sampleRate),d=b.getChannelData(0);
+  for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2);const s=ctx.createBufferSource();s.buffer=b;const f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=1200;
+  const g=ctx.createGain();g.gain.value=.3;s.connect(f).connect(g).connect(master);s.start(t);}
+function blip(){chirp(900,1400,.08,.05);}
+function animalSound(id){
+  if(!soundOn)return;
+  switch(id){
+    case 'macaw':chirp(1800,900,.18,.12);chirp(1700,800,.2,.12,.22);break;
+    case 'toucan':croak();croak(.25);break;
+    case 'frog':croak();croak(.3);croak(.6);break;
+    case 'jaguar':growl();break;
+    case 'snake':hiss();break;
+    case 'dolphin':chirp(3000,6000,.1,.06);chirp(5000,2500,.12,.06,.15);chirp(3000,6000,.1,.06,.3);break;
+    case 'monkey':for(let i=0;i<4;i++)chirp(1200,2600,.09,.1,i*.12);break;
+    case 'condor':chirp(600,400,.4,.06);break;
+    case 'caiman':case 'otter':case 'piranha':case 'capybara':splash();break;
+    default:chirp(2000,2800,.12,.07);
+  }
+}
+function birdLoop(){
+  if(!soundOn)return;
+  const r=Math.random();
+  if(r<.45){const f=rnd(2200,3400);for(let i=0;i<3;i++)chirp(f,f*1.3,.08,.05,i*.13);}
+  else if(r<.65){chirp(1800,1000,.25,.05);}
+  else if(r<.8){croak();}
+  else{chirp(3500,4500,.05,.04);chirp(3500,4500,.05,.04,.1);}
+  birdTimer=setTimeout(birdLoop,rnd(900,2600));
+}
+$('btnSound').onclick=()=>{
+  initAudio();ctx.resume();soundOn=!soundOn;
+  master.gain.cancelScheduledValues(ctx.currentTime);
+  master.gain.linearRampToValueAtTime(soundOn?.6:0,ctx.currentTime+.4);
+  clearTimeout(birdTimer);if(soundOn)birdLoop();
+  updateButtons();
+};
+
+/* =========================================================
+   DROPLET JOURNEY (~2 minutes)
+   ========================================================= */
+let journey=null;
+const dropG=$('droplet');
+(function buildDroplet(){
+  el('path',{d:'M0,-22 C8,-10 14,-2 14,6 C14,15 7,21 0,21 C-7,21 -14,15 -14,6 C-14,-2 -8,-10 0,-22Z',fill:'#7fdcff',stroke:'#1c7fb3','stroke-width':2.5},dropG);
+  el('ellipse',{cx:-5,cy:0,rx:3,ry:5,fill:'#fff',opacity:.7},dropG);
+  el('circle',{cx:-4,cy:6,r:2.4,fill:'#123'},dropG);el('circle',{cx:5,cy:6,r:2.4,fill:'#123'},dropG);
+  el('path',{d:'M-4,12 Q0.5,16 5,12',stroke:'#123','stroke-width':1.8,fill:'none','stroke-linecap':'round'},dropG);
+})();
+function buildJourneyPath(){
+  // falls from Apurímac (middle waterfall) -> stream -> main river -> ocean
+  const f=FALLS[1];
+  const d=`M${f.x},${f.top-30} L${f.x},${f.bottom} C240,505 300,530 350,568 S392,598 400,600 `+RIVER_D.replace('M400,600','')+' L1575,500';
+  const p=el('path',{d,fill:'none'},$('map'));return p;
+}
+let jPath=null,jLen=0;
+function stopsForJourney(){
+  // compute path length position for each stop
+  const list=[{len:0,pic:'🏔️',s:SPOTS[0]},{len:jLen*0.02,s:FALLS[1],pic:'💦'}];
+  const near=(x,y)=>{let best=0,bd=1e9;for(let i=0;i<=800;i++){const l=jLen*i/800;const p=jPath.getPointAtLength(l);const d=Math.hypot(p.x-x,p.y-y);if(d<bd){bd=d;best=l;}}return best;};
+  SPOTS.slice(1).forEach(s=>{
+    let x=s.px,y=s.py;if(s.trib){x=TRIBS[s.trib].jx;y=TRIBS[s.trib].jy;}
+    list.push({len:near(x,y),s,pic:s.pic});
+  });
+  list.sort((a,b)=>a.len-b.len);return list;
+}
+function startJourney(){
+  if(journey){stopJourney();return;}
+  if(!jPath){jPath=buildJourneyPath();jLen=jPath.getTotalLength();}
+  journey={last:performance.now(),pos:0,pause:0,stops:stopsForJourney(),next:0};
+  dropG.style.display='';$('progress').style.display='block';updateButtons();
+}
+function stopJourney(){journey=null;dropG.style.display='none';$('progress').style.display='none';updateButtons();}
+const TRAVEL_MS=55000, PAUSE_MS=5000; // ~55 s travel + 13 stops x 5 s ≈ 2 minutes
+function animateDroplet(now){
+  if(!journey)return;
+  const dt=Math.min(100,now-journey.last);journey.last=now;
+  if(journey.pause>0){journey.pause-=dt;}
+  else{journey.pos=Math.min(jLen,journey.pos+jLen*dt/TRAVEL_MS);}
+  const l=journey.pos;const pt=jPath.getPointAtLength(l);
+  const bounce=Math.sin(now/180)*2;
+  dropG.setAttribute('transform',`translate(${pt.x.toFixed(1)},${(pt.y-14+bounce).toFixed(1)}) scale(.9)`);
+  $('progress').firstElementChild.style.width=(l/jLen*100)+'%';
+  const st=journey.stops[journey.next];
+  if(st&&l>=st.len&&journey.pause<=0){showInfo(st.pic,T(st.s)[0],T(st.s)[1]);journey.next++;journey.pause=PAUSE_MS;
+    if(soundOn&&st.s.id==='pororoca')splash();}
+  if(l>=jLen&&journey.pause<=0&&journey.next>=journey.stops.length){const tx=UI[lang];showInfo('🎉',tx.end,tx.endText);stopJourney();}
+}
+$('btnJourney').onclick=()=>{startJourney();};
+
+/* =========================================================
+   LANGUAGE / BUTTONS
+   ========================================================= */
+let labelsOn=true;
+$('btnLabels').onclick=()=>{labelsOn=!labelsOn;$('map').classList.toggle('labels-off',!labelsOn);updateButtons();};
+$('btnAbout').onclick=()=>{fillAbout();$('about').classList.add('show');};
+$('aboutClose').onclick=()=>$('about').classList.remove('show');
+$('about').onclick=e=>{if(e.target.id==='about')$('about').classList.remove('show');};
+function fillAbout(){
+  $('aboutTitle').textContent=UI[lang].aboutTitle;const ul=$('aboutList');ul.innerHTML='';
+  ABOUT[lang].forEach(([i,t])=>{const li=document.createElement('li');li.innerHTML=`<b>${i}</b>`;li.appendChild(document.createTextNode(t));ul.appendChild(li);});
+}
+function updateButtons(){
+  const u=UI[lang];
+  $('title').innerHTML=u.title;
+  $('btnJourney').textContent=journey?u.stop:u.journey;
+  $('btnSound').textContent=(soundOn?'🔊 ':'🔇 ')+u.sound;$('btnSound').classList.toggle('on',soundOn);
+  $('btnLabels').textContent=u.labels;$('btnLabels').classList.toggle('on',labelsOn);
+  $('btnAbout').textContent=u.about;$('btn3d').textContent=lang==='ro'?'🏔️ Vezi în 3D':'🏔️ View in 3D';$('hint').textContent=u.hint;$('btnRead').textContent=u.read;
+  document.documentElement.lang=lang;
+  document.querySelectorAll('[data-t=atlantic]').forEach(e=>e.textContent=u.atlantic);
+  document.querySelectorAll('[data-k=andes]').forEach(e=>e.textContent=u.andes);
+  document.querySelectorAll('[data-fall]').forEach(e=>{const f=FALLS.find(f=>f.id===e.dataset.fall);e.textContent=T(f)[0].replace(/^(Cascada |)/,'').replace(/ waterfall$/,'');});
+}
+function setLang(l){lang=l;$('lRO').classList.toggle('on',l==='ro');$('lEN').classList.toggle('on',l==='en');updateButtons();
+  if(current&&$('card').classList.contains('show'))$('card').classList.remove('show');
+  if($('about').classList.contains('show'))fillAbout();}
+$('lRO').onclick=()=>setLang('ro');$('lEN').onclick=()=>setLang('en');
+
+/* =========================================================
+   START
+   ========================================================= */
+buildRiver();
+buildTribs();
+buildTrees();
+buildFalls();
+buildPlaces();
+buildAnimals();
+buildSnake();
+buildHotspots();
+updateButtons();
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>
